@@ -1,0 +1,60 @@
+[
+  {
+    "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
+    "Method": "Delete",
+    "RelativePath": "api/Barcode/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
+    "Method": "GetAll",
+    "RelativePath": "api/Barcode/all",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
+    "Method": "DownloadImage",
+    "RelativePath": "api/Barcode/download/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
+    "Method": "Generate",
+    "RelativePath": "api/Barcode/generate",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "GenerationEtiquettes.Models.BarcodeRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

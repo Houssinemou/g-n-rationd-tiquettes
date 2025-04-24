@@ -1,0 +1,6 @@
+@générationdétiquettes_HostAddress = http://localhost:5062
+
+GET {{générationdétiquettes_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
