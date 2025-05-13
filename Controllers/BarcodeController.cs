@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -7,11 +6,11 @@ using System.Text;
 using ZXing;
 using ZXing.Common;
 using ZXing.QrCode;
-using GenerationEtiquettes.Models;
-using Microsoft.EntityFrameworkCore;
+using ZXing.Windows.Compatibility;
 using générationdétiquettes.Data;
 using générationdétiquettes.Models;
-using ZXing.Windows.Compatibility;
+using GenerationEtiquettes.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace GenerationEtiquettes.Controllers
 {
@@ -23,7 +22,6 @@ namespace GenerationEtiquettes.Controllers
         private const int QRCodeSize = 300;
         private const int BarcodeHeight = 100;
         private const int BarcodeWidth = 400;
-        private const int TextAreaHeight = 150;
         private const int Margin = 20;
 
         public BarcodeController(BarcodeDbContext context)
@@ -31,184 +29,191 @@ namespace GenerationEtiquettes.Controllers
             _context = context;
         }
 
+        // ✅ POST pour générer l’étiquette
         [HttpPost("generate")]
         public IActionResult Generate([FromBody] BarcodeRequest request)
         {
-            // Initialisation des champs optionnels
-            request.Description ??= string.Empty;
-            request.CodeFamille ??= string.Empty;
-            request.LibelleFamille ??= string.Empty;
-            request.CodeLocalisation ??= string.Empty;
-            request.LibelleLocalisation ??= string.Empty;
-            request.Texte ??= string.Empty;
-
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            try
+            if (string.IsNullOrWhiteSpace(request.Code) && !string.IsNullOrWhiteSpace(request.Prefix))
             {
-                var image = GenerateBarcodeImage(request);
-                if (image == null)
-                    return BadRequest("Type de code-barres non pris en charge.");
-
-                using var ms = new MemoryStream();
-                image.Save(ms, ImageFormat.Png);
-                var base64 = Convert.ToBase64String(ms.ToArray());
-
-                var entity = new BarcodeEntity
+                var sequence = _context.CodeSequences.FirstOrDefault(s => s.Prefix == request.Prefix);
+                if (sequence == null)
                 {
-                    Code = request.Code,
-                    Description = request.Description,
-                    Type = request.Type,
-                    Base64Image = base64,
-                    CodeFamille = request.CodeFamille,
-                    LibelleFamille = request.LibelleFamille,
-                    CodeLocalisation = request.CodeLocalisation,
-                    LibelleLocalisation = request.LibelleLocalisation,
-                    Texte = request.Texte
+                    sequence = new CodeSequence { Prefix = request.Prefix, LastNumber = 0 };
+                    _context.CodeSequences.Add(sequence);
+                }
+
+                sequence.LastNumber++;
+                _context.SaveChanges();
+                request.Code = $"{request.Prefix}-{sequence.LastNumber:D6}";
+            }
+
+            var image = GenerateBarcodeImage(request);
+            if (image == null)
+                return BadRequest("Type de code-barres non pris en charge.");
+
+            using var ms = new MemoryStream();
+            image.Save(ms, ImageFormat.Png);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+
+            var entity = new BarcodeEntity
+            {
+                Code = request.Code,
+                Description = request.Description,
+                Type = request.Type,
+                Base64Image = base64,
+                CodeFamille = request.CodeFamille,
+                LibelleFamille = request.LibelleFamille,
+                CodeLocalisation = request.CodeLocalisation,
+                LibelleLocalisation = request.LibelleLocalisation,
+                Texte = request.Texte,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Barcodes.Add(entity);
+            _context.SaveChanges();
+
+            return Ok(new
+            {
+                id = entity.Id,
+                base64Image = base64
+            });
+        }
+
+        // ✅ GET pour lister toutes les étiquettes
+        [HttpGet]
+        public IActionResult GetAll()
+        {
+            var list = _context.Barcodes
+                .Select(b => new
+                {
+                    b.Id,
+                    b.Code,
+                    b.Description,
+                    b.Type,
+                    b.CreatedAt,
+                    base64Image = b.Base64Image
+                }).ToList();
+
+            return Ok(list);
+        }
+
+        // ✅ GET pour télécharger l’image
+        [HttpGet("download/{id}")]
+        public IActionResult DownloadImage(int id)
+        {
+            var barcode = _context.Barcodes.Find(id);
+            if (barcode == null)
+                return NotFound("Code-barres introuvable.");
+
+            byte[] imageBytes = Convert.FromBase64String(barcode.Base64Image);
+            return File(imageBytes, "image/png", $"barcode_{id}.png");
+        }
+
+        // ⬇️ Génération de l’image finale avec bordure, saut de ligne, QR enrichi
+        private Bitmap GenerateBarcodeImage(BarcodeRequest request)
+        {
+            Bitmap barcodeBitmap = request.Type.ToLower() switch
+            {
+                "qr" => GenerateQRCode(GenerateQrContent(request), QRCodeSize, QRCodeSize),
+                "1d" => Generate1DBarcode(request.Code, BarcodeWidth, BarcodeHeight),
+                _ => null
+            };
+
+            if (barcodeBitmap == null) return null;
+
+            int canvasWidth = 600;
+            int canvasHeight = 400;
+            var finalImage = new Bitmap(canvasWidth, canvasHeight);
+
+            using var g = Graphics.FromImage(finalImage);
+            g.FillRectangle(Brushes.White, 0, 0, canvasWidth, canvasHeight);
+            g.DrawRectangle(Pens.Black, 0, 0, canvasWidth - 1, canvasHeight - 1); // Bordure noire
+
+            // Logo
+            if (!string.IsNullOrEmpty(request.LogoBase64))
+            {
+                try
+                {
+                    var logoBytes = Convert.FromBase64String(request.LogoBase64
+                        .Replace("data:image/png;base64,", "")
+                        .Replace("data:image/jpeg;base64,", ""));
+                    using var logoStream = new MemoryStream(logoBytes);
+                    using var logo = new Bitmap(logoStream);
+                    g.DrawImage(logo, Margin, Margin, 60, 60);
+                }
+                catch { }
+            }
+
+            // Layout des éléments
+            foreach (var element in request.Layout)
+            {
+                if (!element.Visible) continue;
+
+                float x = element.Left;
+                float y = element.Top;
+                float width = element.Width;
+                float height = element.Height;
+
+                var fontStyle = FontStyle.Regular;
+                if (element.FontWeight == "bold") fontStyle |= FontStyle.Bold;
+                if (element.FontStyle == "italic") fontStyle |= FontStyle.Italic;
+
+                float fontSize = float.TryParse(element.FontSize?.Replace("px", ""), out var size) ? size : 10;
+                var font = new Font("Arial", fontSize, fontStyle);
+                Brush brush = new SolidBrush(ColorTranslator.FromHtml(element.Color));
+
+                string content = element.Id switch
+                {
+                    "code" => request.Code,
+                    "description" => request.Description,
+                    "famille" => $"{request.CodeFamille} - {request.LibelleFamille}",
+                    "localisation" => $"{request.CodeLocalisation} - {request.LibelleLocalisation}",
+                    "texte" => request.Texte,
+                    "barcode" => null,
+                    _ => string.Empty
                 };
 
-                _context.Barcodes.Add(entity);
-                _context.SaveChanges();
-
-                return Ok(new
+                if (element.Id == "barcode")
                 {
-                    id = entity.Id,
-                    base64Image = base64,
-                    details = new
+                    Bitmap barcodeImage = request.Type == "qr"
+                        ? GenerateQRCode(GenerateQrContent(request), (int)width, (int)height)
+                        : Generate1DBarcode(request.Code, (int)width, (int)height);
+                    g.DrawImage(barcodeImage, x, y, width, height);
+                }
+                else
+                {
+                    var format = new StringFormat()
                     {
-                        entity.Code,
-                        entity.Description,
-                        entity.Type,
-                        entity.CodeFamille,
-                        entity.LibelleFamille,
-                        entity.CodeLocalisation,
-                        entity.LibelleLocalisation,
-                        entity.Texte
-                    },
-                    qrContent = GenerateQrContent(request)
-                });
+                        FormatFlags = StringFormatFlags.LineLimit,
+                        Trimming = StringTrimming.EllipsisWord
+                    };
+
+                    format.Alignment = element.TextAlign switch
+                    {
+                        "center" => StringAlignment.Center,
+                        "right" => StringAlignment.Far,
+                        _ => StringAlignment.Near
+                    };
+
+                    g.DrawString(content, font, brush, new RectangleF(x, y, width, height), format);
+                }
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Une erreur est survenue: {ex.Message}");
-            }
+
+            return finalImage;
         }
 
         private string GenerateQrContent(BarcodeRequest request)
         {
             var content = new StringBuilder();
             content.Append($"CODE:{request.Code}|");
-
-            if (!string.IsNullOrEmpty(request.Description))
-                content.Append($"DESC:{request.Description}|");
-
-            if (!string.IsNullOrEmpty(request.CodeFamille))
-                content.Append($"FAM:{request.CodeFamille}|");
-
-            if (!string.IsNullOrEmpty(request.LibelleFamille))
-                content.Append($"LIB_FAM:{request.LibelleFamille}|");
-
-            if (!string.IsNullOrEmpty(request.CodeLocalisation))
-                content.Append($"LOC:{request.CodeLocalisation}|");
-
-            if (!string.IsNullOrEmpty(request.LibelleLocalisation))
-                content.Append($"LIB_LOC:{request.LibelleLocalisation}|");
-
-            if (!string.IsNullOrEmpty(request.Texte))
-                content.Append($"TXT:{request.Texte}");
-
+            content.Append($"DESC:{request.Description}|");
+            content.Append($"FAM:{request.CodeFamille}-{request.LibelleFamille}|");
+            content.Append($"LOC:{request.CodeLocalisation}-{request.LibelleLocalisation}|");
+            content.Append($"TXT:{request.Texte}");
             return content.ToString();
-        }
-
-        private Bitmap GenerateBarcodeImage(BarcodeRequest request)
-        {
-            return request.Type.ToLower() switch
-            {
-                "qr" => GenerateQRCodeWithText(request),
-                "1d" => Generate1DBarcodeWithText(request),
-                _ => null
-            };
-        }
-
-        private Bitmap GenerateQRCodeWithText(BarcodeRequest request)
-        {
-            var qrContent = GenerateQrContent(request);
-            var qrBitmap = GenerateQRCode(qrContent, QRCodeSize, QRCodeSize);
-
-            var finalImage = new Bitmap(QRCodeSize + Margin * 2, QRCodeSize + TextAreaHeight);
-
-            using (var g = Graphics.FromImage(finalImage))
-            {
-                g.FillRectangle(Brushes.White, 0, 0, finalImage.Width, finalImage.Height);
-                g.DrawImage(qrBitmap, Margin, 0);
-                DrawTextInfo(g, request, QRCodeSize + 10);
-            }
-
-            return finalImage;
-        }
-
-        private Bitmap Generate1DBarcodeWithText(BarcodeRequest request)
-        {
-            var barcodeBitmap = Generate1DBarcode(request.Code, BarcodeWidth, BarcodeHeight);
-
-            var finalImage = new Bitmap(BarcodeWidth + Margin * 2, BarcodeHeight + TextAreaHeight);
-
-            using (var g = Graphics.FromImage(finalImage))
-            {
-                g.FillRectangle(Brushes.White, 0, 0, finalImage.Width, finalImage.Height);
-                g.DrawImage(barcodeBitmap, Margin, 0);
-                DrawTextInfo(g, request, BarcodeHeight + 10);
-            }
-
-            return finalImage;
-        }
-
-        private void DrawTextInfo(Graphics g, BarcodeRequest request, int startY)
-        {
-            var titleFont = new Font("Arial", 12, FontStyle.Bold);
-            var normalFont = new Font("Arial", 10);
-            var smallFont = new Font("Arial", 8);
-            var format = new StringFormat { Alignment = StringAlignment.Center };
-            int currentY = startY;
-
-            // Code
-            g.DrawString(request.Code, titleFont, Brushes.Black,
-                        new RectangleF(Margin, currentY, BarcodeWidth, 20), format);
-            currentY += 25;
-
-            // Description
-            if (!string.IsNullOrEmpty(request.Description))
-            {
-                g.DrawString(request.Description, normalFont, Brushes.Black,
-                            new RectangleF(Margin, currentY, BarcodeWidth, 20), format);
-                currentY += 20;
-            }
-
-            // Famille
-            if (!string.IsNullOrEmpty(request.CodeFamille) || !string.IsNullOrEmpty(request.LibelleFamille))
-            {
-                g.DrawString($"{request.CodeFamille} {request.LibelleFamille}".Trim(),
-                            normalFont, Brushes.Black,
-                            new RectangleF(Margin, currentY, BarcodeWidth, 20), format);
-                currentY += 20;
-            }
-
-            // Localisation
-            if (!string.IsNullOrEmpty(request.CodeLocalisation) || !string.IsNullOrEmpty(request.LibelleLocalisation))
-            {
-                g.DrawString($"{request.CodeLocalisation} {request.LibelleLocalisation}".Trim(),
-                            normalFont, Brushes.Black,
-                            new RectangleF(Margin, currentY, BarcodeWidth, 20), format);
-                currentY += 20;
-            }
-
-            // Texte
-            if (!string.IsNullOrEmpty(request.Texte))
-            {
-                g.DrawString(request.Texte, smallFont, Brushes.Black,
-                            new RectangleF(Margin, currentY, BarcodeWidth, 40), format);
-            }
         }
 
         private Bitmap GenerateQRCode(string content, int width, int height)
@@ -228,11 +233,9 @@ namespace GenerationEtiquettes.Controllers
 
             var pixelData = writer.Write(content);
             var bitmap = new Bitmap(pixelData.Width, pixelData.Height, PixelFormat.Format32bppArgb);
-            var bmpData = bitmap.LockBits(new Rectangle(0, 0, pixelData.Width, pixelData.Height),
-                                      ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            var bmpData = bitmap.LockBits(new Rectangle(0, 0, pixelData.Width, pixelData.Height), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
             System.Runtime.InteropServices.Marshal.Copy(pixelData.Pixels, 0, bmpData.Scan0, pixelData.Pixels.Length);
             bitmap.UnlockBits(bmpData);
-
             return bitmap;
         }
 
@@ -251,37 +254,6 @@ namespace GenerationEtiquettes.Controllers
             };
 
             return writer.Write(code);
-        }
-
-        [HttpGet("all")]
-        public IActionResult GetAll()
-        {
-            var list = _context.Barcodes.ToList();
-            return Ok(list);
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
-        {
-            var barcode = _context.Barcodes.Find(id);
-            if (barcode == null)
-                return NotFound("Code-barres introuvable.");
-
-            _context.Barcodes.Remove(barcode);
-            _context.SaveChanges();
-
-            return Ok("Code-barres supprimé avec succès.");
-        }
-
-        [HttpGet("download/{id}")]
-        public IActionResult DownloadImage(int id)
-        {
-            var barcode = _context.Barcodes.Find(id);
-            if (barcode == null)
-                return NotFound("Code-barres introuvable.");
-
-            byte[] imageBytes = Convert.FromBase64String(barcode.Base64Image);
-            return File(imageBytes, "image/png", $"barcode_{id}.png");
         }
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using générationdétiquettes.Data;
 
@@ -11,9 +12,11 @@ using générationdétiquettes.Data;
 namespace générationdétiquettes.Migrations
 {
     [DbContext(typeof(BarcodeDbContext))]
-    partial class BarcodeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250505184335_AddCodeSequence")]
+    partial class AddCodeSequence
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,66 +24,6 @@ namespace générationdétiquettes.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("générationdétiquettes.Models.Article", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CodeArticle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("DateAcquisition")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DateEnregistrement")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Famille")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Fournisseur")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Localisation")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MarqueModele")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("ModeleEtiquette")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Nom")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NumeroSerie")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PhotoPath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PieceJointePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal?>("PrixAcquisition")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Statut")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UniteFonction")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Articles");
-                });
 
             modelBuilder.Entity("générationdétiquettes.Models.BarcodeEntity", b =>
                 {
@@ -91,6 +34,7 @@ namespace générationdétiquettes.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Base64Image")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Code")
@@ -104,9 +48,7 @@ namespace générationdétiquettes.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -145,8 +87,7 @@ namespace générationdétiquettes.Migrations
 
                     b.Property<string>("Prefix")
                         .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("nvarchar(5)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

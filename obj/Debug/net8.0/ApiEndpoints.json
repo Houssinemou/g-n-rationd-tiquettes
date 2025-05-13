@@ -1,8 +1,101 @@
 [
   {
-    "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
-    "Method": "Delete",
-    "RelativePath": "api/Barcode/{id}",
+    "ContainingType": "g\u00E9n\u00E9rationd\u00E9tiquettes.Controllers.ArticleController",
+    "Method": "GetArticles",
+    "RelativePath": "api/Article",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.IEnumerable\u00601[[g\u00E9n\u00E9rationd\u00E9tiquettes.Models.Article, g\u00E9n\u00E9rationd\u00E9tiquettes, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "g\u00E9n\u00E9rationd\u00E9tiquettes.Controllers.ArticleController",
+    "Method": "CreateArticle",
+    "RelativePath": "api/Article",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "article",
+        "Type": "g\u00E9n\u00E9rationd\u00E9tiquettes.Models.Article",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "g\u00E9n\u00E9rationd\u00E9tiquettes.Models.Article",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "g\u00E9n\u00E9rationd\u00E9tiquettes.Controllers.ArticleController",
+    "Method": "GetArticle",
+    "RelativePath": "api/Article/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "g\u00E9n\u00E9rationd\u00E9tiquettes.Models.Article",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "g\u00E9n\u00E9rationd\u00E9tiquettes.Controllers.ArticleController",
+    "Method": "UpdateArticle",
+    "RelativePath": "api/Article/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "article",
+        "Type": "g\u00E9n\u00E9rationd\u00E9tiquettes.Models.Article",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "g\u00E9n\u00E9rationd\u00E9tiquettes.Controllers.ArticleController",
+    "Method": "DeleteArticle",
+    "RelativePath": "api/Article/{id}",
     "HttpMethod": "DELETE",
     "IsController": true,
     "Order": 0,
@@ -18,7 +111,7 @@
   {
     "ContainingType": "GenerationEtiquettes.Controllers.BarcodeController",
     "Method": "GetAll",
-    "RelativePath": "api/Barcode/all",
+    "RelativePath": "api/Barcode",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,

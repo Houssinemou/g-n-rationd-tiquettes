@@ -1,33 +1,53 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+
 
 namespace GenerationEtiquettes.Models
 {
     public class BarcodeRequest
     {
-        [Required(ErrorMessage = "Le code est obligatoire.")]
-        [StringLength(50, ErrorMessage = "Le code ne peut excéder 50 caractères.")]
-        public string Code { get; set; }
+        [BindNever]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [Display(AutoGenerateField = false)]
+        public string Code { get; set; } = "";
 
-        [StringLength(100, ErrorMessage = "La description ne peut excéder 100 caractères.")]
-        public string Description { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Le préfixe est obligatoire.")]
+        public string Prefix { get; set; }
 
         [Required(ErrorMessage = "Le type est obligatoire.")]
         [RegularExpression("qr|1d", ErrorMessage = "Le type doit être 'qr' ou '1d'.")]
         public string Type { get; set; }
 
-        [StringLength(20, ErrorMessage = "Le code famille ne peut excéder 20 caractères.")]
-        public string CodeFamille { get; set; } = string.Empty;
+        public string Description { get; set; }
+        public string CodeFamille { get; set; }
+        public string LibelleFamille { get; set; }
+        public string CodeLocalisation { get; set; }
+        public string LibelleLocalisation { get; set; }
+        public string Texte { get; set; }
+        public string LogoBase64 { get; set; }
 
-        [StringLength(50, ErrorMessage = "Le libellé famille ne peut excéder 50 caractères.")]
-        public string LibelleFamille { get; set; } = string.Empty;
+        [JsonPropertyName("contenuQRCode")]
+        public string? ContenuQRCode { get; set; }
 
-        [StringLength(20, ErrorMessage = "Le code localisation ne peut excéder 20 caractères.")]
-        public string CodeLocalisation { get; set; } = string.Empty;
+        [Required(ErrorMessage = "Le layout est obligatoire.")]
+        public List<LayoutElement> Layout { get; set; } = new();
+    }
 
-        [StringLength(50, ErrorMessage = "Le libellé localisation ne peut excéder 50 caractères.")]
-        public string LibelleLocalisation { get; set; } = string.Empty;
-
-        [StringLength(200, ErrorMessage = "Le texte ne peut excéder 200 caractères.")]
-        public string Texte { get; set; } = string.Empty;
+    public class LayoutElement
+    {
+        public string Id { get; set; }
+        public bool Visible { get; set; }
+        public float Top { get; set; }
+        public float Left { get; set; }
+        public float Width { get; set; }
+        public float Height { get; set; }
+        public string FontSize { get; set; }
+        public string FontWeight { get; set; }
+        public string FontStyle { get; set; }
+        public string Color { get; set; }
+        public string TextAlign { get; set; }
     }
 }
