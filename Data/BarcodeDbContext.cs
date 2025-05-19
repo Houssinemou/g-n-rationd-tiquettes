@@ -14,6 +14,7 @@ namespace générationdétiquettes.Data
         public DbSet<CodeSequence> CodeSequences { get; set; }
         public DbSet<Article> Articles { get; set; }
 
+ 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

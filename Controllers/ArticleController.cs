@@ -35,12 +35,41 @@ namespace générationdétiquettes.Controllers
             return article;
         }
 
+        // 🔹 GET: api/article/familles
+        [HttpGet("familles")]
+        public async Task<ActionResult<IEnumerable<string>>> GetFamilles()
+        {
+            var familles = await _context.Articles
+                .Where(a => !string.IsNullOrEmpty(a.Famille))
+                .Select(a => a.Famille)
+                .Distinct()
+                .ToListAsync();
+
+            return familles;
+        }
+
         // 🔹 POST: api/article
         [HttpPost]
         public async Task<ActionResult<Article>> CreateArticle([FromBody] Article article)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            if (string.IsNullOrWhiteSpace(article.CodeArticle) && !string.IsNullOrWhiteSpace(article.Famille))
+            {
+                var prefix = GeneratePrefix(article.Famille); // ✅ utilise la méthode ici
+                var sequence = await _context.CodeSequences.FirstOrDefaultAsync(s => s.Prefix == prefix);
+                if (sequence == null)
+                {
+                    sequence = new CodeSequence { Prefix = prefix, LastNumber = 0 };
+                    _context.CodeSequences.Add(sequence);
+                }
+
+                sequence.LastNumber++;
+                await _context.SaveChangesAsync();
+
+                article.CodeArticle = $"{prefix}-{sequence.LastNumber:D6}";
+            }
 
             _context.Articles.Add(article);
             await _context.SaveChangesAsync();
@@ -86,10 +115,48 @@ namespace générationdétiquettes.Controllers
             return NoContent();
         }
 
-        // 🔎 Vérifie l'existence d'un article
+        // 🔍 Vérifie l'existence d'un article
         private bool ArticleExists(int id)
         {
             return _context.Articles.Any(e => e.Id == id);
+        }
+
+        // ✅ Générateur de préfixes standardisés
+        private string GeneratePrefix(string? famille)
+        {
+            if (string.IsNullOrWhiteSpace(famille))
+                return "DEF";
+
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Imprimantes", "IMP" },
+                { "Ordinateurs", "ORD" },
+                { "Scanners", "SCA" },
+                { "Vidéoprojecteurs", "VID" },
+                { "Téléphones", "TEL" },
+                { "Serveurs", "SRV" },
+                { "Écrans", "ECR" },
+                { "Bureau", "BUR" },
+                { "Chaises", "CHA" },
+                { "Chaise", "CHA" },
+                { "Armoires", "ARM" },
+                { "Tables", "TAB" },
+                { "Routeurs", "ROU" },
+                { "Switchs", "SWT" },
+                { "Accessoires", "ACC" },
+                { "Câbles", "CAB" },
+                { "Logiciels", "LOG" },
+                { "Onduleurs", "OND" }
+            };
+
+            if (dict.TryGetValue(famille.Trim(), out var prefix))
+                return prefix;
+
+            return new string(famille
+                .Where(char.IsLetter)
+                .Take(3)
+                .Select(char.ToUpper)
+                .ToArray());
         }
     }
 }

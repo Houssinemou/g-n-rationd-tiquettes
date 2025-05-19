@@ -55,6 +55,7 @@ namespace GenerationEtiquettes.Controllers
                 return BadRequest("Type de code-barres non pris en charge.");
 
             using var ms = new MemoryStream();
+            
             image.Save(ms, ImageFormat.Png);
             var base64 = Convert.ToBase64String(ms.ToArray());
 
@@ -111,6 +112,180 @@ namespace GenerationEtiquettes.Controllers
             byte[] imageBytes = Convert.FromBase64String(barcode.Base64Image);
             return File(imageBytes, "image/png", $"barcode_{id}.png");
         }
+
+        [HttpGet("by-code/{code}")]
+        public IActionResult GetByCode(string code)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                return BadRequest("Code requis");
+
+            var cleanedCode = code.Trim().ToUpper();
+
+            var barcode = _context.Barcodes
+                .AsEnumerable() // ← ramène les données côté serveur pour comparer sans erreur de collation
+                .FirstOrDefault(b => b.Code?.Trim().ToUpper() == cleanedCode);
+
+            if (barcode == null)
+                return NotFound();
+
+            return Ok(new { base64Image = barcode.Base64Image });
+        }
+
+
+
+
+        [HttpPost("generate-from-article")]
+        public IActionResult GenerateFromArticle([FromBody] Article article)
+        {
+            if (string.IsNullOrWhiteSpace(article.Nom))
+                return BadRequest("Nom est requis.");
+
+            // ✅ Générer automatiquement le CodeArticle s'il est vide
+            if (string.IsNullOrWhiteSpace(article.CodeArticle))
+            {
+                var prefix = GeneratePrefix(article.Famille);
+                var sequence = _context.CodeSequences.FirstOrDefault(s => s.Prefix == prefix);
+                if (sequence == null)
+                {
+                    sequence = new CodeSequence { Prefix = prefix, LastNumber = 0 };
+                    _context.CodeSequences.Add(sequence);
+                }
+
+                sequence.LastNumber++;
+                _context.SaveChanges();
+
+                article.CodeArticle = $"{prefix}-{sequence.LastNumber:D6}";
+            }
+
+            var request = new BarcodeRequest
+            {
+                Prefix = article.CodeArticle.Split('-').FirstOrDefault() ?? "DEF",
+                Code = article.CodeArticle,
+                Description = article.Nom,
+                CodeFamille = article.Famille ?? "",
+                LibelleFamille = article.Famille ?? "",
+                CodeLocalisation = article.Localisation ?? "",
+                LibelleLocalisation = article.Localisation ?? "",
+                Texte = article.MarqueModele ?? "",
+                Type = "qr",
+                DateAcquisition = article.DateAcquisition,
+                DateEnregistrement = article.DateEnregistrement,
+                Layout = GetDefaultLayout()
+            };
+
+            var image = GenerateBarcodeImage(request);
+            if (image == null) return BadRequest("Type non pris en charge");
+
+            using var ms = new MemoryStream();
+            image.Save(ms, ImageFormat.Png);
+            var base64 = Convert.ToBase64String(ms.ToArray());
+
+            var entity = new BarcodeEntity
+            {
+                Code = request.Code,
+                Description = request.Description,
+                Type = request.Type,
+                Base64Image = base64,
+                CodeFamille = request.CodeFamille,
+                LibelleFamille = request.LibelleFamille,
+                CodeLocalisation = request.CodeLocalisation,
+                LibelleLocalisation = request.LibelleLocalisation,
+                Texte = request.Texte,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Barcodes.Add(entity);
+            _context.SaveChanges();
+
+            // Lier le BarcodeId à l'article si existant
+            var existingArticle = _context.Articles.FirstOrDefault(a => a.CodeArticle == article.CodeArticle);
+            if (existingArticle != null)
+            {
+                existingArticle.BarcodeId = entity.Id;
+                _context.SaveChanges();
+            }
+
+            return Ok(new { id = entity.Id, base64Image = base64 });
+        }
+
+        private List<LayoutElement> GetDefaultLayout()
+        {
+            return new List<LayoutElement>
+    {
+        new LayoutElement
+        {
+            Id = "code",
+            Top = 10,
+            Left = 10,
+            Width = 300,
+            Height = 30,
+            FontSize = "14px",
+            FontWeight = "bold",
+            FontStyle = "normal",
+            Color = "#000",
+            TextAlign = "left",
+            Visible = true
+        },
+        new LayoutElement
+        {
+            Id = "description",
+            Top = 40,
+            Left = 10,
+            Width = 300,
+            Height = 30,
+            FontSize = "12px",
+            FontWeight = "normal",
+            FontStyle = "italic",
+            Color = "#333",
+            TextAlign = "left",
+            Visible = true
+        },
+        new LayoutElement
+        {
+            Id = "dateAcquisition",
+            Top = 70,
+            Left = 10,
+            Width = 300,
+            Height = 20,
+            FontSize = "12px",
+            FontWeight = "normal",
+            FontStyle = "normal",
+            Color = "#000",
+            TextAlign = "left",
+            Visible = true
+        },
+        new LayoutElement
+        {
+            Id = "dateEnregistrement",
+            Top = 90,
+            Left = 10,
+            Width = 300,
+            Height = 20,
+            FontSize = "12px",
+            FontWeight = "normal",
+            FontStyle = "normal",
+            Color = "#000",
+            TextAlign = "left",
+            Visible = true
+        },
+        new LayoutElement
+        {
+            Id = "barcode",
+            Top = 130,
+            Left = 10,
+            Width = 250,
+            Height = 250,
+            FontSize = "14px",
+            FontWeight = "normal",
+            FontStyle = "normal",
+            Color = "#000",
+            TextAlign = "left",
+            Visible = true
+        }
+    };
+        }
+
+
 
         // ⬇️ Génération de l’image finale avec bordure, saut de ligne, QR enrichi
         private Bitmap GenerateBarcodeImage(BarcodeRequest request)
@@ -172,6 +347,8 @@ namespace GenerationEtiquettes.Controllers
                     "famille" => $"{request.CodeFamille} - {request.LibelleFamille}",
                     "localisation" => $"{request.CodeLocalisation} - {request.LibelleLocalisation}",
                     "texte" => request.Texte,
+                    "dateAcquisition" => request.DateAcquisition?.ToString("dd/MM/yyyy") ?? "",
+                    "dateEnregistrement" => request.DateEnregistrement?.ToString("dd/MM/yyyy") ?? "",
                     "barcode" => null,
                     _ => string.Empty
                 };
@@ -255,5 +432,43 @@ namespace GenerationEtiquettes.Controllers
 
             return writer.Write(code);
         }
+
+        private string GeneratePrefix(string? famille)
+        {
+            if (string.IsNullOrWhiteSpace(famille))
+                return "DEF";
+
+            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Imprimantes", "IMP" },
+        { "Ordinateurs", "ORD" },
+        { "Scanners", "SCA" },
+        { "Vidéoprojecteurs", "VID" },
+        { "Téléphones", "TEL" },
+        { "Serveurs", "SRV" },
+        { "Écrans", "ECR" },
+        { "Bureau", "BUR" },
+        { "Chaises", "CHA" },
+        { "Chaise", "CHA" },
+        { "Armoires", "ARM" },
+        { "Tables", "TAB" },
+        { "Routeurs", "ROU" },
+        { "Switchs", "SWT" },
+        { "Accessoires", "ACC" },
+        { "Câbles", "CAB" },
+        { "Logiciels", "LOG" },
+        { "Onduleurs", "OND" }
+    };
+
+            if (dict.TryGetValue(famille.Trim(), out var prefix))
+                return prefix;
+
+            return new string(famille
+                .Where(char.IsLetter)
+                .Take(3)
+                .Select(char.ToUpper)
+                .ToArray());
+        }
+
     }
 }

@@ -29,6 +29,9 @@ namespace GenerationEtiquettes.Models
         public string Texte { get; set; }
         public string LogoBase64 { get; set; }
 
+        public DateTime? DateAcquisition { get; set; }
+        public DateTime? DateEnregistrement { get; set; }
+
         [JsonPropertyName("contenuQRCode")]
         public string? ContenuQRCode { get; set; }
 
