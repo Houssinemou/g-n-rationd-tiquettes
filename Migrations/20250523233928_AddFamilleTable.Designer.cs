@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using générationdétiquettes.Data;
 
@@ -11,9 +12,11 @@ using générationdétiquettes.Data;
 namespace générationdétiquettes.Migrations
 {
     [DbContext(typeof(BarcodeDbContext))]
-    partial class BarcodeDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250523233928_AddFamilleTable")]
+    partial class AddFamilleTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,27 +178,6 @@ namespace générationdétiquettes.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Familles");
-                });
-
-            modelBuilder.Entity("générationdétiquettes.Models.UniteFonction", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Libelle")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("UnitesFonction");
                 });
 #pragma warning restore 612, 618
         }

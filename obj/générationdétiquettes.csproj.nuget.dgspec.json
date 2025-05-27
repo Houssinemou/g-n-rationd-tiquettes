@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes\\générationdétiquettes.csproj": {}
+    "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes.csproj": {}
   },
   "projects": {
-    "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes\\générationdétiquettes.csproj": {
+    "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes\\générationdétiquettes.csproj",
+        "projectUniqueName": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes.csproj",
         "projectName": "générationdétiquettes",
-        "projectPath": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes\\générationdétiquettes.csproj",
+        "projectPath": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes.csproj",
         "packagesPath": "C:\\Users\\pc\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\générationdétiquettes\\obj\\",
+        "outputPath": "C:\\Users\\pc\\source\\repos\\générationdétiquettes\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

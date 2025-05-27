@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using générationdétiquettes.Models;
 
+
 namespace générationdétiquettes.Data
 {
     public class BarcodeDbContext : DbContext
@@ -13,8 +14,10 @@ namespace générationdétiquettes.Data
         public DbSet<BarcodeEntity> Barcodes { get; set; }
         public DbSet<CodeSequence> CodeSequences { get; set; }
         public DbSet<Article> Articles { get; set; }
+        public DbSet<Famille> Familles { get; set; }
+        public DbSet<UniteFonction> UnitesFonction { get; set; }
 
- 
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
