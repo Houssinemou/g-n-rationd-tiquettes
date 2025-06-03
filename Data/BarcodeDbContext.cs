@@ -16,7 +16,8 @@ namespace générationdétiquettes.Data
         public DbSet<Article> Articles { get; set; }
         public DbSet<Famille> Familles { get; set; }
         public DbSet<UniteFonction> UnitesFonction { get; set; }
-
+        public DbSet<Fournisseur> Fournisseurs { get; set; }
+        public DbSet<Localisation> Localisations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
