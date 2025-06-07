@@ -345,3 +345,4 @@ C:\Users\pc\source\repos\générationdétiquettes\obj\Debug\net8.0\refint\géné
 C:\Users\pc\source\repos\générationdétiquettes\obj\Debug\net8.0\générationdétiquettes.pdb
 C:\Users\pc\source\repos\générationdétiquettes\obj\Debug\net8.0\générationdétiquettes.genruntimeconfig.cache
 C:\Users\pc\source\repos\générationdétiquettes\obj\Debug\net8.0\ref\générationdétiquettes.dll
+C:\Users\pc\source\repos\générationdétiquettes\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

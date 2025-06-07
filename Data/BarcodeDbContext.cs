@@ -18,6 +18,7 @@ namespace générationdétiquettes.Data
         public DbSet<UniteFonction> UnitesFonction { get; set; }
         public DbSet<Fournisseur> Fournisseurs { get; set; }
         public DbSet<Localisation> Localisations { get; set; }
+        public DbSet<User> Users { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

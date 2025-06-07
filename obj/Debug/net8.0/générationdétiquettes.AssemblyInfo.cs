@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("générationdétiquettes")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8bd37bc0fc1cccadc727a62160a586538cd2de2e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+001a6fd032e42c53a615a338434a311ee77b39e4")]
 [assembly: System.Reflection.AssemblyProductAttribute("générationdétiquettes")]
 [assembly: System.Reflection.AssemblyTitleAttribute("générationdétiquettes")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
